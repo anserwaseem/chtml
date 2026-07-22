@@ -12,6 +12,7 @@ without adding meaning.
 - 🔒 **Optional `-a` attribute stripping** — drops `class`/`id`/`data-*`/`aria-*` soup, keeps `href`, `src`, `alt`, `title`, etc.
 - 🖼️ **Optional `--strip-svg`** — collapses inline `<svg>...</svg>` icon path data down to `<svg/>`.
 - 📋 **Auto copy** — copies the cleaned result to your clipboard and prints the char-count savings to stderr.
+- 📁 **Optional `-t` tmp-file mode** — writes the result to the OS temp dir and copies the file *path* instead, so you can hand an LLM a path instead of pasting a huge blob.
 
 ## Installation
 
@@ -52,6 +53,7 @@ chtml page.html
 | `--keep-scripts` | Keep `<script>` blocks (stripped by default) |
 | `--no-squeeze` | Don't collapse pretty-print whitespace |
 | `--no-clipboard` | Don't copy the result to the clipboard |
+| `-t`, `--tmpfile` | Write the result to a file in the OS temp dir and copy its path instead of the content |
 
 For the most aggressive cut (structure and text only):
 ```sh

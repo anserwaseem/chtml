@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import sys
 import re
+import os
+import tempfile
 import argparse
 import subprocess
 import platform
@@ -142,6 +144,13 @@ def sanitize(html, strip_attrs=False, strip_svg=False, keep_comments=False,
     return result
 
 
+def write_temp_file(content):
+    fd, path = tempfile.mkstemp(prefix='chtml-', suffix='.html', dir=tempfile.gettempdir())
+    with os.fdopen(fd, 'w', encoding='utf-8') as f:
+        f.write(content)
+    return path
+
+
 def copy_to_clipboard(text):
     system = platform.system()
     try:
@@ -180,6 +189,11 @@ def main():
     parser.add_argument('--keep-scripts', action='store_true', help='keep <script> blocks (stripped by default)')
     parser.add_argument('--no-squeeze', action='store_true', help="don't collapse pretty-print indentation whitespace")
     parser.add_argument('--no-clipboard', action='store_true', help="don't copy the result to the clipboard")
+    parser.add_argument(
+        '-t', '--tmpfile', action='store_true',
+        help="write the result to a file in the OS temp dir and copy that file's path instead of "
+             "the content - hand the LLM a path instead of pasting a huge blob"
+    )
     parser.add_argument('file', nargs='?', help='read HTML from a file instead of stdin/clipboard')
     args = parser.parse_args()
 
@@ -201,15 +215,22 @@ def main():
         no_squeeze=args.no_squeeze,
     )
 
-    print(result)
-
     before, after = len(input_data), len(result)
     saved_pct = 100 * (1 - after / before) if before else 0
+
+    if args.tmpfile:
+        path = write_temp_file(result)
+        print(path)
+        clip_text, clip_label = path, 'file path'
+    else:
+        print(result)
+        clip_text, clip_label = result, 'result'
+
     print(f"\n\033[92m{before:,} -> {after:,} chars ({saved_pct:.0f}% smaller)\033[0m", file=sys.stderr)
 
     if not args.no_clipboard:
-        if copy_to_clipboard(result):
-            print("\033[92m✔ Copied to clipboard\033[0m", file=sys.stderr)
+        if copy_to_clipboard(clip_text):
+            print(f"\033[92m✔ Copied {clip_label} to clipboard\033[0m", file=sys.stderr)
         else:
             print("\033[93m⚠ Could not find clipboard tool (install xclip on Linux)\033[0m", file=sys.stderr)
 
